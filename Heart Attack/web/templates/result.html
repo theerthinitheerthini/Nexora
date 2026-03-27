@@ -1,0 +1,586 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.main-wrap { margin-left: 220px; padding: 88px 40px 60px; }
+
+/* ── STEPPER ── */
+.stepper {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0; margin-bottom: 40px; position: relative;
+}
+.step-item {
+  display: flex; flex-direction: column; align-items: center;
+  position: relative; flex: 1; max-width: 200px;
+}
+.step-item:not(:last-child)::after {
+  content: '';
+  position: absolute; top: 20px; left: calc(50% + 20px);
+  width: calc(100% - 40px); height: 2px;
+  background: rgba(255,255,255,0.1);
+  transition: background 0.4s;
+  z-index: 0;
+}
+.step-item.completed:not(:last-child)::after {
+  background: linear-gradient(90deg, #1565ff, #00d4ff);
+}
+
+.step-circle {
+  width: 42px; height: 42px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700;
+  background: rgba(255,255,255,0.06);
+  border: 2px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.4);
+  transition: all 0.4s; position: relative; z-index: 1;
+  cursor: pointer;
+}
+.step-item.active .step-circle {
+  background: linear-gradient(135deg, #1565ff, #00d4ff);
+  border-color: #00d4ff;
+  color: white;
+  box-shadow: 0 0 20px rgba(0,212,255,0.4);
+}
+.step-item.completed .step-circle {
+  background: linear-gradient(135deg, #00b894, #00d4ff);
+  border-color: #00e5a0;
+  color: white;
+}
+.step-label {
+  font-size: 11px; font-weight: 600; margin-top: 8px;
+  color: rgba(255,255,255,0.3); text-align: center;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  transition: color 0.3s;
+}
+.step-item.active .step-label   { color: #00d4ff; }
+.step-item.completed .step-label { color: #00e5a0; }
+
+/* ── STEP PANELS ── */
+.step-panel { display: none; animation: fadeInUp 0.4s ease; }
+.step-panel.active { display: block; }
+@keyframes fadeInUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+/* ── STEP 1: RISK RESULT ── */
+.result-hero {
+  text-align: center;
+  padding: 60px 40px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 28px;
+  max-width: 600px; margin: 0 auto;
+  position: relative; overflow: hidden;
+}
+.result-hero::before {
+  content: ''; position: absolute; inset: 0; opacity: 0.05;
+  background: radial-gradient(circle at 50% 40%, var(--risk-clr, #00e5a0), transparent 70%);
+}
+
+.result-hero-icon {
+  font-size: 96px;
+  display: block; margin-bottom: 20px;
+  animation: riskBounce 2s ease-in-out infinite;
+}
+@keyframes riskBounce { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+
+.result-hero h1 {
+  font-family: 'Syne',sans-serif; font-size: 20px;
+  color: rgba(255,255,255,0.5); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+.result-hero .risk-value {
+  font-family: 'Syne',sans-serif; font-size: 52px; font-weight: 800;
+  line-height: 1; margin-bottom: 16px;
+}
+.result-hero p {
+  font-size: 15px; color: rgba(255,255,255,0.5);
+  line-height: 1.7; max-width: 400px; margin: 0 auto;
+}
+
+/* confidence bar in step 1 */
+.conf-wrap {
+  max-width: 380px; margin: 28px auto 0;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px; padding: 20px 24px;
+}
+.conf-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+.conf-row span { font-size: 13px; color: rgba(255,255,255,0.45); }
+.conf-row strong { font-family: 'Syne',sans-serif; font-size: 20px; font-weight: 800; }
+.conf-track { height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow:hidden; }
+.conf-fill { height: 100%; border-radius: 4px; transition: width 1s ease 0.5s;
+  background: linear-gradient(90deg, #1565ff, #00d4ff); }
+
+/* ── STEP 2: RISK DETAILS ── */
+.risk-detail-card {
+  max-width: 720px; margin: 0 auto;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 24px; overflow: hidden;
+}
+.rdc-header {
+  padding: 28px 36px;
+  background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex; align-items: center; gap: 14px;
+}
+.rdc-header h2 { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; }
+.rdc-header p  { font-size:13px; color:rgba(255,255,255,0.4); margin-top:3px; }
+
+.rdc-body { padding: 32px 36px; }
+
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.detail-item {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px; padding: 18px 20px;
+  display: flex; align-items: flex-start; gap: 14px;
+  transition: all 0.2s;
+}
+.detail-item:hover { background: rgba(0,212,255,0.04); border-color: rgba(0,212,255,0.15); }
+.detail-icon { font-size: 26px; flex-shrink: 0; }
+.detail-label { font-size: 12px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.5px; }
+.detail-value { font-family:'Syne',sans-serif; font-size:18px; font-weight:800; color:white; margin-top:2px; }
+.detail-note  { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 4px; line-height:1.5; }
+
+/* risk level indicator row */
+.risk-level-row {
+  margin-top: 24px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 16px; padding: 20px 24px;
+}
+.risk-level-row h4 { font-family:'Syne',sans-serif; font-size:13px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:14px; }
+.risk-scale { display: flex; gap: 8px; }
+.rs-step {
+  flex: 1; padding: 10px 8px; border-radius: 10px;
+  text-align: center; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  opacity: 0.35; transition: opacity 0.3s;
+}
+.rs-step.rs-active { opacity: 1; transform: scale(1.04); }
+.rs-low    { background:rgba(0,229,160,0.15); color:#00e5a0; border:1px solid rgba(0,229,160,0.3); }
+.rs-medium { background:rgba(255,184,48,0.15); color:#ffb830; border:1px solid rgba(255,184,48,0.3); }
+.rs-high   { background:rgba(255,100,50,0.15); color:#ff6432; border:1px solid rgba(255,100,50,0.3); }
+.rs-veryhigh { background:rgba(255,59,92,0.15); color:#ff3b5c; border:1px solid rgba(255,59,92,0.3); }
+
+/* ── STEP 3: LIFESTYLE TIPS ── */
+.tips-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 14px; max-width: 760px; margin: 0 auto;
+}
+.tip-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 16px; padding: 18px 20px;
+  display: flex; align-items: flex-start; gap: 14px;
+  transition: all 0.25s; cursor: default;
+  animation: tipIn 0.4s ease both;
+}
+@keyframes tipIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+.tip-card:nth-child(1){animation-delay:0.05s} .tip-card:nth-child(2){animation-delay:0.1s}
+.tip-card:nth-child(3){animation-delay:0.15s} .tip-card:nth-child(4){animation-delay:0.2s}
+.tip-card:nth-child(5){animation-delay:0.25s} .tip-card:nth-child(6){animation-delay:0.3s}
+.tip-card:nth-child(7){animation-delay:0.35s} .tip-card:nth-child(8){animation-delay:0.4s}
+.tip-card:nth-child(9){animation-delay:0.45s} .tip-card:nth-child(10){animation-delay:0.5s}
+.tip-card:hover { background:rgba(0,212,255,0.05); border-color:rgba(0,212,255,0.2); transform:translateY(-2px); }
+.tip-num {
+  width: 28px; height: 28px; border-radius: 8px; flex-shrink:0;
+  background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; color: #00d4ff;
+}
+.tip-text { font-size: 13.5px; color: rgba(255,255,255,0.75); line-height:1.55; }
+
+.tips-header {
+  max-width: 760px; margin: 0 auto 24px;
+  display: flex; align-items: center; gap: 12px;
+}
+.tips-header h2 { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; }
+.tips-header p   { font-size:13px; color:rgba(255,255,255,0.4); margin-top:3px; }
+
+/* ── STEP 4: DOCTOR + DOWNLOAD ── */
+.doctor-section { max-width: 700px; margin: 0 auto; }
+.doctor-header { margin-bottom: 24px; }
+.doctor-header h2 { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; }
+.doctor-header p   { font-size:13px; color:rgba(255,255,255,0.4); margin-top:4px; }
+
+.doctor-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+.doctor-item {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px; padding: 16px 20px;
+  display: flex; align-items: flex-start; gap: 14px;
+  transition: all 0.2s;
+  animation: tipIn 0.4s ease both;
+}
+.doctor-item:hover { background:rgba(21,101,255,0.06); border-color:rgba(21,101,255,0.2); }
+.doctor-step-num {
+  width: 32px; height: 32px; border-radius: 10px;
+  background: linear-gradient(135deg, rgba(21,101,255,0.3), rgba(0,212,255,0.2));
+  border: 1px solid rgba(21,101,255,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; color: #00d4ff; flex-shrink:0;
+}
+.doctor-item p { font-size:14px; color:rgba(255,255,255,0.8); line-height:1.55; }
+
+/* alert */
+.alert-banner {
+  border-radius: 16px; padding: 20px 24px;
+  display: flex; gap: 16px; align-items: flex-start;
+  margin-bottom: 28px;
+}
+.alert-urgent-red {
+  background: rgba(255,59,92,0.1); border: 1px solid rgba(255,59,92,0.3);
+}
+.alert-ok-green {
+  background: rgba(0,229,160,0.08); border: 1px solid rgba(0,229,160,0.2);
+}
+.alert-banner .al-icon { font-size: 30px; flex-shrink:0; }
+.alert-banner strong { display:block; font-family:'Syne',sans-serif; margin-bottom:4px; font-size:15px; }
+.alert-banner p { font-size:13px; color:rgba(255,255,255,0.55); line-height:1.65; }
+
+/* download card */
+.download-card {
+  background: linear-gradient(135deg, rgba(21,101,255,0.15), rgba(0,212,255,0.08));
+  border: 1px solid rgba(0,212,255,0.2);
+  border-radius: 20px; padding: 28px 32px;
+  display: flex; align-items: center; gap: 24px;
+}
+.dl-icon { font-size: 52px; flex-shrink:0; }
+.dl-text h3 { font-family:'Syne',sans-serif; font-size:18px; font-weight:800; margin-bottom:4px; }
+.dl-text p  { font-size:13px; color:rgba(255,255,255,0.45); }
+.btn-dl-big {
+  margin-left: auto; flex-shrink:0;
+  padding: 14px 28px; border-radius: 13px;
+  background: linear-gradient(135deg, #1565ff, #00d4ff);
+  color: white; font-weight: 700; font-size: 14px;
+  border: none; cursor: pointer; font-family:'DM Sans',sans-serif;
+  box-shadow: 0 4px 20px rgba(21,101,255,0.4);
+  transition: all 0.25s; text-decoration:none;
+  display: flex; align-items:center; gap:8px;
+}
+.btn-dl-big:hover { transform:translateY(-2px); box-shadow: 0 8px 28px rgba(21,101,255,0.55); }
+
+/* ── NAV BUTTONS ── */
+.step-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 36px; max-width: 760px; margin-left: auto; margin-right: auto;
+}
+.btn-step {
+  padding: 12px 28px; border-radius: 12px;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer; border: none; font-family:'DM Sans',sans-serif;
+  transition: all 0.2s; display:flex; align-items:center; gap:8px;
+  text-decoration: none;
+}
+.btn-next {
+  background: linear-gradient(135deg, #1565ff, #00d4ff); color: white;
+  box-shadow: 0 4px 18px rgba(21,101,255,0.35);
+}
+.btn-next:hover { transform:translateY(-1px); box-shadow: 0 6px 24px rgba(21,101,255,0.5); }
+.btn-prev {
+  background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.btn-prev:hover { background:rgba(255,255,255,0.1); }
+.btn-prev.hidden { visibility:hidden; }
+
+.step-indicator { font-size: 13px; color: rgba(255,255,255,0.35); }
+.step-indicator strong { color: #00d4ff; }
+
+/* risk-color helpers */
+{% if risk == 'LOW' %}
+:root { --risk-clr: #00e5a0; }
+.risk-clr { color: #00e5a0; }
+{% elif risk == 'MEDIUM' %}
+:root { --risk-clr: #ffb830; }
+.risk-clr { color: #ffb830; }
+{% elif risk == 'HIGH' %}
+:root { --risk-clr: #ff6432; }
+.risk-clr { color: #ff6432; }
+{% else %}
+:root { --risk-clr: #ff3b5c; }
+.risk-clr { color: #ff3b5c; }
+{% endif %}
+
+@media(max-width:768px){
+  .main-wrap { margin-left:0; padding:88px 18px 60px; }
+  .detail-grid { grid-template-columns:1fr; }
+  .tips-grid { grid-template-columns:1fr; }
+  .stepper { gap:0; }
+  .step-label { display:none; }
+  .download-card { flex-direction:column; }
+  .btn-dl-big { margin-left:0; width:100%; justify-content:center; }
+}
+</style>
+
+<!-- STEPPER -->
+<div class="stepper" id="stepperBar">
+  <div class="step-item active" id="step-dot-1">
+    <div class="step-circle" onclick="goTo(1)">1</div>
+    <span class="step-label">Result</span>
+  </div>
+  <div class="step-item" id="step-dot-2">
+    <div class="step-circle" onclick="goTo(2)">2</div>
+    <span class="step-label">Risk Details</span>
+  </div>
+  <div class="step-item" id="step-dot-3">
+    <div class="step-circle" onclick="goTo(3)">3</div>
+    <span class="step-label">Lifestyle Tips</span>
+  </div>
+  <div class="step-item" id="step-dot-4">
+    <div class="step-circle" onclick="goTo(4)">4</div>
+    <span class="step-label">Doctor Advice</span>
+  </div>
+</div>
+
+
+<!-- ════════ STEP 1 — RESULT ════════ -->
+<div class="step-panel active" id="panel-1">
+  <div class="result-hero">
+    <span class="result-hero-icon">
+      {% if risk == 'LOW' %}💚{% elif risk == 'MEDIUM' %}💛{% elif risk == 'HIGH' %}🟠{% else %}🔴{% endif %}
+    </span>
+    <h1>Cardiovascular Risk Level</h1>
+    <div class="risk-value risk-clr">{{ risk }}</div>
+    <p>
+      Assessment for <strong style="color:white">{{ user_name }}</strong>
+      &nbsp;|&nbsp; {{ created_at }}
+    </p>
+
+    {% if probability %}
+    <div class="conf-wrap">
+      <div class="conf-row">
+        <span>AI Confidence Score</span>
+        <strong class="risk-clr">{{ probability }}%</strong>
+      </div>
+      <div class="conf-track">
+        <div class="conf-fill" id="confBar" style="width:0%"></div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="step-nav">
+    <button class="btn-step btn-prev hidden">← Back</button>
+    <span class="step-indicator">Step <strong>1</strong> of 4</span>
+    <button class="btn-step btn-next" onclick="goTo(2)">Risk Details →</button>
+  </div>
+</div>
+
+
+<!-- ════════ STEP 2 — RISK DETAILS ════════ -->
+<div class="step-panel" id="panel-2">
+  <div class="risk-detail-card">
+    <div class="rdc-header">
+      <span style="font-size:28px">📋</span>
+      <div>
+        <h2>Risk Assessment Details</h2>
+        <p>Understanding your cardiovascular risk score and classification</p>
+      </div>
+    </div>
+    <div class="rdc-body">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span class="detail-icon">🫀</span>
+          <div>
+            <div class="detail-label">Risk Level</div>
+            <div class="detail-value risk-clr">{{ risk }}</div>
+            <div class="detail-note">
+              {% if risk == 'LOW' %}Your heart health indicators are within healthy range.
+              {% elif risk == 'MEDIUM' %}Moderate risk detected — lifestyle changes advised.
+              {% elif risk == 'HIGH' %}High risk detected — medical consultation required.
+              {% else %}Very high risk — urgent cardiologist consultation needed.{% endif %}
+            </div>
+          </div>
+        </div>
+
+        {% if probability %}
+        <div class="detail-item">
+          <span class="detail-icon">🤖</span>
+          <div>
+            <div class="detail-label">AI Confidence</div>
+            <div class="detail-value risk-clr">{{ probability }}%</div>
+            <div class="detail-note">Model confidence in this risk classification based on your data.</div>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="detail-item">
+          <span class="detail-icon">👤</span>
+          <div>
+            <div class="detail-label">Patient</div>
+            <div class="detail-value" style="font-size:16px">{{ user_name }}</div>
+            <div class="detail-note">Assessment date: {{ created_at }}</div>
+          </div>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-icon">📊</span>
+          <div>
+            <div class="detail-label">Risk Score</div>
+            <div class="detail-value">{{ risk_score }} pts</div>
+            <div class="detail-note">
+              {% if risk_score <= 4 %}Score 0–4 → LOW risk range
+              {% elif risk_score <= 9 %}Score 5–9 → MEDIUM risk range
+              {% else %}Score 10+ → HIGH risk range{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Risk Scale -->
+      <div class="risk-level-row">
+        <h4>📈 Risk Scale — Where You Stand</h4>
+        <div class="risk-scale">
+          <div class="rs-step rs-low    {% if risk == 'LOW' %}rs-active{% endif %}">💚 Low<br><span style="font-size:10px;opacity:0.7">0–4 pts</span></div>
+          <div class="rs-step rs-medium {% if risk == 'MEDIUM' %}rs-active{% endif %}">💛 Medium<br><span style="font-size:10px;opacity:0.7">5–9 pts</span></div>
+          <div class="rs-step rs-high   {% if risk == 'HIGH' %}rs-active{% endif %}">🟠 High<br><span style="font-size:10px;opacity:0.7">10+ pts</span></div>
+          <div class="rs-step rs-veryhigh {% if risk == 'VERY HIGH' %}rs-active{% endif %}">🔴 Very High<br><span style="font-size:10px;opacity:0.7">Severe</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="step-nav">
+    <button class="btn-step btn-prev" onclick="goTo(1)">← Result</button>
+    <span class="step-indicator">Step <strong>2</strong> of 4</span>
+    <button class="btn-step btn-next" onclick="goTo(3)">Lifestyle Tips →</button>
+  </div>
+</div>
+
+
+<!-- ════════ STEP 3 — LIFESTYLE TIPS ════════ -->
+<div class="step-panel" id="panel-3">
+  <div class="tips-header">
+    <span style="font-size:32px">🥗</span>
+    <div>
+      <h2>Lifestyle Recommendations</h2>
+      <p>{{ tips|length }} personalised tips based on your <span class="risk-clr font-bold">{{ risk }}</span> risk level</p>
+    </div>
+  </div>
+
+  <div class="tips-grid">
+    {% for tip in tips %}
+    <div class="tip-card">
+      <div class="tip-num">{{ loop.index }}</div>
+      <p class="tip-text">{{ tip }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="step-nav">
+    <button class="btn-step btn-prev" onclick="goTo(2)">← Risk Details</button>
+    <span class="step-indicator">Step <strong>3</strong> of 4</span>
+    <button class="btn-step btn-next" onclick="goTo(4)">Doctor Advice →</button>
+  </div>
+</div>
+
+
+<!-- ════════ STEP 4 — DOCTOR ADVICE + DOWNLOAD ════════ -->
+<div class="step-panel" id="panel-4">
+  <div class="doctor-section">
+
+    <div class="doctor-header">
+      <h2>🩺 Doctor Consultation Advice</h2>
+      <p>{{ doctor|length }} recommended steps for your medical follow-up</p>
+    </div>
+
+    <!-- Urgency alert -->
+    {% if risk in ['HIGH', 'VERY HIGH'] %}
+    <div class="alert-banner alert-urgent-red">
+      <div class="al-icon">🚨</div>
+      <div>
+        <strong style="color:#ff3b5c">Urgent Medical Attention Required</strong>
+        <p>Your risk level is <strong style="color:#ff3b5c">{{ risk }}</strong>. Please consult a cardiologist within 72 hours. If you experience chest pain or difficulty breathing, call <strong>112</strong> immediately.</p>
+      </div>
+    </div>
+    {% else %}
+    <div class="alert-banner alert-ok-green">
+      <div class="al-icon">✅</div>
+      <div>
+        <strong style="color:#00e5a0">Looking Good — Stay Proactive</strong>
+        <p>Your risk is <strong style="color:#00e5a0">{{ risk }}</strong>. Follow the recommendations below and schedule routine checkups to stay on top of your heart health.</p>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="doctor-list">
+      {% for d in doctor %}
+      <div class="doctor-item" style="animation-delay:{{ loop.index0 * 0.08 }}s">
+        <div class="doctor-step-num">{{ loop.index }}</div>
+        <p>{{ d }}</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- DOWNLOAD CARD -->
+    <div class="download-card">
+      <div class="dl-icon">📄</div>
+      <div class="dl-text">
+        <h3>Download Your Full PDF Report</h3>
+        <p>Includes risk level, AI confidence, lifestyle tips, and doctor recommendations — ready for your physician.</p>
+      </div>
+      <form method="POST" action="{{ url_for('download_report') }}" style="margin:0">
+        <input type="hidden" name="risk" value="{{ risk }}">
+        <input type="hidden" name="probability" value="{{ probability }}">
+        <input type="hidden" name="created_at" value="{{ created_at }}">
+        <button type="submit" class="btn-dl-big">📥 Download PDF</button>
+      </form>
+    </div>
+
+    <p style="font-size:12px; color:rgba(255,255,255,0.22); text-align:center; margin-top:20px; line-height:1.7;">
+      ⚠️ This AI-generated report is for informational purposes only and does not constitute medical advice.<br>
+      Always consult a qualified healthcare professional for diagnosis and treatment.
+    </p>
+  </div>
+
+  <div class="step-nav">
+    <button class="btn-step btn-prev" onclick="goTo(3)">← Lifestyle Tips</button>
+    <span class="step-indicator">Step <strong>4</strong> of 4</span>
+    <div style="display:flex;gap:10px;">
+      <a href="{{ url_for('history') }}" class="btn-step btn-prev">📊 History</a>
+      <a href="{{ url_for('dashboard') }}" class="btn-step btn-next">+ New Assessment</a>
+    </div>
+  </div>
+</div>
+
+
+<script>
+let currentStep = 1;
+
+function goTo(n) {
+  if (n < 1 || n > 4) return;
+
+  // deactivate old
+  document.getElementById('panel-' + currentStep).classList.remove('active');
+  const oldDot = document.getElementById('step-dot-' + currentStep);
+  oldDot.classList.remove('active');
+  if (n > currentStep) oldDot.classList.add('completed');
+
+  // activate new
+  currentStep = n;
+  document.getElementById('panel-' + n).classList.add('active');
+
+  // update stepper dots
+  for (let i = 1; i <= 4; i++) {
+    const dot = document.getElementById('step-dot-' + i);
+    dot.classList.remove('active', 'completed');
+    if (i < n)      dot.classList.add('completed');
+    else if (i === n) dot.classList.add('active');
+  }
+
+  // scroll to top of content
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Animate confidence bar on load
+setTimeout(() => {
+  const bar = document.getElementById('confBar');
+  if (bar) bar.style.width = '{{ probability or 0 }}%';
+}, 400);
+</script>
+
+{% endblock %}

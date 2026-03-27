@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.main-wrap { margin-left: 220px; padding: 88px 40px 60px; }
+
+.admin-header {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  margin-bottom: 32px;
+}
+.admin-header h1 { font-family: 'Syne',sans-serif; font-size: 28px; font-weight: 800; }
+.admin-header h1 span { color: #a855f7; }
+.admin-header p { color: rgba(255,255,255,0.4); font-size: 14px; margin-top: 4px; }
+
+.admin-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 50px;
+  background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.3);
+  color: #a855f7; font-size: 12px; font-weight: 600;
+}
+
+/* Stats grid */
+.stats-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 18px; padding: 24px;
+  transition: all 0.3s; position: relative; overflow: hidden;
+}
+.stat-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+}
+.stat-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.12); }
+.sc-blue::before   { background: linear-gradient(90deg,#1565ff,#00d4ff); }
+.sc-purple::before { background: linear-gradient(90deg,#7c3aed,#a855f7); }
+.sc-green::before  { background: linear-gradient(90deg,#00b894,#00d4ff); }
+.sc-red::before    { background: linear-gradient(90deg,#ff3b5c,#ff7730); }
+
+.stat-icon { font-size: 28px; margin-bottom: 12px; }
+.stat-value { font-family: 'Syne',sans-serif; font-size: 32px; font-weight: 800; color: white; }
+.stat-label { font-size: 12px; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 4px; }
+
+/* Section cards */
+.admin-section {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 20px; overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.section-head {
+  padding: 20px 28px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,0.02);
+}
+.section-head h2 { font-family: 'Syne',sans-serif; font-size: 16px; font-weight: 700; }
+.section-head .cnt { margin-left:auto; font-size:11px; color:rgba(255,255,255,0.3); background:rgba(255,255,255,0.06); padding:3px 10px; border-radius:20px; }
+
+.table-scroll { max-height: 380px; overflow-y: auto; }
+.table-scroll::-webkit-scrollbar { width: 4px; }
+.table-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+.admin-table { width: 100%; border-collapse: collapse; }
+.admin-table th {
+  padding: 12px 24px; text-align: left;
+  font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.3);
+  text-transform: uppercase; letter-spacing: 1px;
+  background: rgba(255,255,255,0.02);
+  position: sticky; top: 0; z-index: 1;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.admin-table td {
+  padding: 14px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 13.5px; color: rgba(255,255,255,0.75);
+  transition: background 0.2s;
+}
+.admin-table tr:hover td { background: rgba(0,212,255,0.03); }
+.admin-table tr:last-child td { border-bottom: none; }
+
+/* Risk badges */
+.rb {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 12px; border-radius: 20px;
+  font-size: 11px; font-weight: 700;
+}
+.rb-low    { background:rgba(0,229,160,0.12);color:#00e5a0;border:1px solid rgba(0,229,160,0.25); }
+.rb-medium { background:rgba(255,184,48,0.12);color:#ffb830;border:1px solid rgba(255,184,48,0.25); }
+.rb-high   { background:rgba(255,100,50,0.12);color:#ff6432;border:1px solid rgba(255,100,50,0.25); }
+.rb-veryhigh { background:rgba(255,59,92,0.12);color:#ff3b5c;border:1px solid rgba(255,59,92,0.25); }
+
+.user-name { font-weight: 600; color: white; }
+.user-email { font-size: 12px; color: rgba(255,255,255,0.35); }
+
+@media(max-width:1200px){ .stats-grid { grid-template-columns: repeat(2,1fr); } }
+@media(max-width:768px){
+  .main-wrap { margin-left: 0; padding: 88px 20px 60px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .admin-table th, .admin-table td { padding: 10px 14px; }
+}
+</style>
+
+<!-- HEADER -->
+<div class="admin-header">
+  <div>
+    <h1>Admin <span>Control Panel</span></h1>
+    <p>System overview — All users, predictions, and platform activity</p>
+  </div>
+  <div class="admin-badge">🛡️ System Administrator</div>
+</div>
+
+<!-- STATS GRID -->
+<div class="stats-grid">
+  <div class="stat-card sc-blue">
+    <div class="stat-icon">👥</div>
+    <div class="stat-value">{{ total_users }}</div>
+    <div class="stat-label">Registered Users</div>
+  </div>
+  <div class="stat-card sc-purple">
+    <div class="stat-icon">📊</div>
+    <div class="stat-value">{{ total_predictions }}</div>
+    <div class="stat-label">Total Predictions</div>
+  </div>
+  <div class="stat-card sc-green">
+    <div class="stat-icon">✅</div>
+    <div class="stat-value">{{ recent_logins|length }}</div>
+    <div class="stat-label">Recent Logins</div>
+  </div>
+  <div class="stat-card sc-red">
+    <div class="stat-icon">❤️</div>
+    <div class="stat-value">{{ "%.1f"|format(total_predictions / total_users if total_users > 0 else 0) }}</div>
+    <div class="stat-label">Avg per User</div>
+  </div>
+</div>
+
+<!-- USERS TABLE -->
+<div class="admin-section">
+  <div class="section-head">
+    <span style="font-size:18px">👥</span>
+    <h2>Registered Users & Activity</h2>
+    <span class="cnt">{{ total_users }} users</span>
+  </div>
+  <div class="table-scroll">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>User</th>
+          <th>Email</th>
+          <th>Predictions</th>
+          <th>Last Login</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users_data %}
+        <tr>
+          <td style="color:rgba(255,255,255,0.3);font-size:12px">#{{ user.id }}</td>
+          <td><span class="user-name">{{ user.name }}</span></td>
+          <td><span class="user-email">{{ user.email }}</span></td>
+          <td>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;color:#00d4ff">{{ user.pred_count }}</span>
+          </td>
+          <td style="color:rgba(255,255,255,0.4); font-size:12px">
+            {% if user.last_login != 'Never' %}
+              {{ user.last_login.strftime('%d %b %Y %H:%M') if user.last_login != 'Never' else 'Never' }}
+            {% else %}Never{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PREDICTIONS TABLE -->
+<div class="admin-section">
+  <div class="section-head">
+    <span style="font-size:18px">📊</span>
+    <h2>Global Prediction History</h2>
+    <span class="cnt">{{ total_predictions }} records</span>
+  </div>
+  <div class="table-scroll">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Risk Level</th>
+          <th>Confidence</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record, user in prediction_history %}
+        <tr>
+          <td>
+            <div class="user-name">{{ user.name }}</div>
+            <div class="user-email">{{ user.email }}</div>
+          </td>
+          <td>
+            <span class="rb rb-{{ record.predicted_risk.replace(' ','').lower() }}">
+              {% if record.predicted_risk == 'LOW' %}💚
+              {% elif record.predicted_risk == 'MEDIUM' %}💛
+              {% elif record.predicted_risk == 'HIGH' %}🟠
+              {% else %}🔴{% endif %}
+              {{ record.predicted_risk }}
+            </span>
+          </td>
+          <td>
+            <span style="font-weight:700;color:#00d4ff">
+              {{ record.probability or '—' }}{% if record.probability %}%{% endif %}
+            </span>
+          </td>
+          <td style="color:rgba(255,255,255,0.4);font-size:12px">
+            {{ record.created_at.strftime('%d %b %Y %H:%M') }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- RECENT LOGINS TABLE -->
+<div class="admin-section">
+  <div class="section-head">
+    <span style="font-size:18px">🔐</span>
+    <h2>Recent Login Activity</h2>
+    <span class="cnt">Last {{ recent_logins|length }}</span>
+  </div>
+  <div class="table-scroll">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Email</th>
+          <th>Login Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for login in recent_logins %}
+        <tr>
+          <td class="user-name">{{ login.user.name }}</td>
+          <td class="user-email">{{ login.user.email }}</td>
+          <td style="color:rgba(255,255,255,0.4);font-size:12px">
+            {{ login.login_time.strftime('%d %b %Y — %H:%M:%S') }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

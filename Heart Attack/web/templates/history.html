@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.main-wrap { margin-left: 220px; padding: 88px 40px 60px; }
+
+.page-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
+.page-header h1 { font-family: 'Syne',sans-serif; font-size: 28px; font-weight: 800; }
+.page-header h1 span { color: #00d4ff; }
+.page-header p { color: rgba(255,255,255,0.4); font-size: 14px; margin-top: 4px; }
+
+.stats-row { display: flex; gap: 16px; margin-bottom: 28px; }
+.stat-pill {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px; padding: 16px 24px;
+  flex: 1; text-align: center;
+}
+.stat-pill strong { display: block; font-family: 'Syne',sans-serif; font-size: 24px; font-weight: 800; }
+.stat-pill span { font-size: 12px; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* TABLE CARD */
+.table-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 22px; overflow: hidden;
+}
+
+.table-header {
+  padding: 22px 28px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex; align-items: center; gap: 10px;
+}
+.table-header h2 { font-family: 'Syne',sans-serif; font-size: 17px; font-weight: 700; }
+
+.history-table { width: 100%; border-collapse: collapse; }
+.history-table th {
+  padding: 14px 28px; text-align: left;
+  font-size: 11px; font-weight: 700;
+  color: rgba(255,255,255,0.35);
+  text-transform: uppercase; letter-spacing: 1.2px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.02);
+}
+.history-table td {
+  padding: 16px 28px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 14px; color: rgba(255,255,255,0.8);
+  transition: background 0.2s;
+}
+.history-table tr:hover td { background: rgba(0,212,255,0.03); }
+.history-table tr:last-child td { border-bottom: none; }
+
+.risk-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px; border-radius: 20px;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.3px;
+}
+.rb-low    { background: rgba(0,229,160,0.12); color: #00e5a0; border: 1px solid rgba(0,229,160,0.25); }
+.rb-medium { background: rgba(255,184,48,0.12); color: #ffb830; border: 1px solid rgba(255,184,48,0.25); }
+.rb-high   { background: rgba(255,100,50,0.12); color: #ff6432; border: 1px solid rgba(255,100,50,0.25); }
+.rb-veryhigh { background: rgba(255,59,92,0.12); color: #ff3b5c; border: 1px solid rgba(255,59,92,0.25); }
+
+.conf-mini { display: flex; align-items: center; gap: 10px; }
+.conf-mini-bar { flex: 1; height: 5px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; max-width: 80px; }
+.conf-mini-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #1565ff, #00d4ff); }
+
+.date-cell { color: rgba(255,255,255,0.5); font-size: 13px; }
+
+.no-records {
+  padding: 60px 28px; text-align: center;
+  color: rgba(255,255,255,0.3);
+}
+.no-records span { font-size: 52px; display: block; margin-bottom: 16px; opacity: 0.5; }
+.no-records p { font-size: 15px; margin-bottom: 20px; }
+.btn-start {
+  padding: 12px 28px; border-radius: 12px;
+  background: linear-gradient(135deg, #1565ff, #0ea5e9);
+  color: white; text-decoration: none; font-weight: 700; font-size: 14px;
+  display: inline-block;
+}
+
+@media(max-width:768px){
+  .main-wrap { margin-left: 0; padding: 88px 20px 60px; }
+  .stats-row { flex-wrap: wrap; }
+  .history-table th, .history-table td { padding: 12px 16px; }
+}
+</style>
+
+<div class="page-header">
+  <div>
+    <h1>Prediction <span>History</span></h1>
+    <p>Your complete cardiovascular risk assessment timeline</p>
+  </div>
+  <a href="{{ url_for('dashboard') }}" style="padding:10px 20px;border-radius:11px;background:linear-gradient(135deg,#1565ff,#0ea5e9);color:white;font-weight:700;font-size:13px;text-decoration:none;">+ New Assessment</a>
+</div>
+
+<!-- Stats -->
+{% if records %}
+{% set low_count = records | selectattr('predicted_risk', 'equalto', 'LOW') | list | length %}
+{% set med_count = records | selectattr('predicted_risk', 'equalto', 'MEDIUM') | list | length %}
+{% set high_count = records | selectattr('predicted_risk', 'equalto', 'HIGH') | list | length %}
+{% set vh_count  = records | selectattr('predicted_risk', 'equalto', 'VERY HIGH') | list | length %}
+
+<div class="stats-row">
+  <div class="stat-pill">
+    <strong style="color:white">{{ records|length }}</strong>
+    <span>Total Assessments</span>
+  </div>
+  <div class="stat-pill">
+    <strong style="color:#00e5a0">{{ low_count }}</strong>
+    <span>Low Risk</span>
+  </div>
+  <div class="stat-pill">
+    <strong style="color:#ffb830">{{ med_count }}</strong>
+    <span>Medium Risk</span>
+  </div>
+  <div class="stat-pill">
+    <strong style="color:#ff3b5c">{{ high_count + vh_count }}</strong>
+    <span>High / Very High</span>
+  </div>
+</div>
+{% endif %}
+
+<div class="table-card">
+  <div class="table-header">
+    <span style="font-size:18px">📊</span>
+    <h2>Assessment Records</h2>
+  </div>
+
+  {% if records %}
+  <table class="history-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Date & Time</th>
+        <th>Risk Level</th>
+        <th>AI Confidence</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in records %}
+      <tr>
+        <td style="color:rgba(255,255,255,0.3); font-size:13px">{{ loop.index }}</td>
+        <td class="date-cell">
+          📅 {{ r.created_at.strftime('%d %b %Y') }}<br>
+          <span style="font-size:12px">🕐 {{ r.created_at.strftime('%H:%M') }}</span>
+        </td>
+        <td>
+          <span class="risk-badge
+            {% if r.predicted_risk == 'LOW' %}rb-low
+            {% elif r.predicted_risk == 'MEDIUM' %}rb-medium
+            {% elif r.predicted_risk == 'HIGH' %}rb-high
+            {% else %}rb-veryhigh{% endif %}
+          ">
+            {% if r.predicted_risk == 'LOW' %}💚
+            {% elif r.predicted_risk == 'MEDIUM' %}💛
+            {% elif r.predicted_risk == 'HIGH' %}🟠
+            {% else %}🔴{% endif %}
+            {{ r.predicted_risk }}
+          </span>
+        </td>
+        <td>
+          {% if r.probability %}
+          <div class="conf-mini">
+            <div class="conf-mini-bar">
+              <div class="conf-mini-fill" style="width:{{ r.probability }}%"></div>
+            </div>
+            <span style="font-size:13px;font-weight:600;color:#00d4ff">{{ r.probability }}%</span>
+          </div>
+          {% else %}
+          <span style="color:rgba(255,255,255,0.3)">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="no-records">
+    <span>🫀</span>
+    <p>No assessments yet. Take your first risk analysis!</p>
+    <a href="{{ url_for('dashboard') }}" class="btn-start">Start Assessment →</a>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}
